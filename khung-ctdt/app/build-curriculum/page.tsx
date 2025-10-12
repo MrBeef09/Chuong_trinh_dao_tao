@@ -1,15 +1,11 @@
 // File: app/build-curriculum/page.tsx
 // Next.js (App Router) page component written in TypeScript + React using Tailwind CSS
-// Usage:
-// 1) Put this file at: <project-root>/app/build-curriculum/page.tsx
-// 2) Make sure Tailwind is configured (postcss + tailwind.config.js + app/globals.css with @tailwind directives)
-// 3) Start dev server: npm run dev
 
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
 
-// ---------- Mock data (you can later move to /lib/data.ts) ----------
+// ---------- Mock data ----------
 type KnowledgeBlock = {
   id: string
   name: string
@@ -61,6 +57,7 @@ export default function BuildCurriculumPage() {
   const [block, setBlock] = useState<string>(BLOCKS[0].id)
   const [selectedSubjects, setSelectedSubjects] = useState<Record<string, boolean>>({})
   const [subjectType, setSubjectType] = useState<Record<string, 'required' | 'elective'>>({})
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     // Reset selections when block changes
@@ -68,7 +65,7 @@ export default function BuildCurriculumPage() {
     const initialSel: Record<string, boolean> = {}
     const initialType: Record<string, 'required' | 'elective'> = {}
     list.forEach((s) => {
-      initialSel[s.id] = true // default ticked as in screenshot
+      initialSel[s.id] = true
       initialType[s.id] = 'required'
     })
 
@@ -90,20 +87,40 @@ export default function BuildCurriculumPage() {
     setSubjectType((prev) => ({ ...prev, [id]: t }))
   }
 
-  function handleSave() {
-    // For now just alert the payload — later replace with API call
-    const payload = {
-      program,
-      cohort,
-      block,
-      subjects: subjects.filter((s) => selectedSubjects[s.id]).map((s) => ({ ...s, type: subjectType[s.id] })),
-      totalCredits,
+  async function handleSave() {
+    setLoading(true)
+    try {
+      const body = {
+        program: program,
+        cohort: cohort,
+        block: block,
+        subjects: subjects.filter(s => selectedSubjects[s.id]).map(s => ({ ...s, type: subjectType[s.id] })),
+        totalCredits,
+      };
+      
+      // ✅ Sửa URL từ /api/123/khung-ctdt sang /api/khung-ctdt
+      const res = await fetch("/api/khung-ctdt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        alert("✅ " + (data.message || "Lưu thành công!"));
+      } else {
+        alert("❌ " + (data.error || "Lưu thất bại!"));
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("❌ Lỗi khi lưu dữ liệu!");
+    } finally {
+      setLoading(false)
     }
-    alert('Saving (mock)\n' + JSON.stringify(payload, null, 2))
   }
 
   function handleView() {
-    // Navigate to a view page — you can replace with next/navigation in real app
     alert('Open View Curriculum (mock)')
   }
 
@@ -194,23 +211,14 @@ export default function BuildCurriculumPage() {
 
               {/* actions */}
               <div className="mt-4 flex gap-3">
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={async () => {
-                  const body = {
-                    program: program,
-                    cohort: cohort,
-                    block: block,
-                    subjects: subjects.filter(s => selectedSubjects[s.id]).map(s => ({ ...s, type: subjectType[s.id] })),
-                    totalCredits,
-                  };
-                  const res = await fetch("/api/khung-ctdt", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(body),
-                  });
-                  const data = await res.json();
-                  alert(data.message || "Lưu thất bại!");
-                  }}>Save Changes</button>
-                <button onClick={handleView} className="flex-1 border border-slate-300 py-2 rounded-md">View Curriculum</button>
+                <button 
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-2 rounded-md font-medium transition"
+                  onClick={handleSave}
+                >
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button onClick={handleView} className="flex-1 border border-slate-300 py-2 rounded-md hover:bg-slate-50 transition">View Curriculum</button>
               </div>
             </div>
           </div>
