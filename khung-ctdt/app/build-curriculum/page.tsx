@@ -4,6 +4,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 // ---------- Mock data ----------
 type KnowledgeBlock = {
@@ -52,6 +53,7 @@ const SUBJECTS_BY_BLOCK: Record<string, Subject[]> = {
 
 // ---------- Main Page ----------
 export default function BuildCurriculumPage() {
+  const router = useRouter();
   const [program, setProgram] = useState<string>(PROGRAMS[0].id)
   const [cohort, setCohort] = useState<string>(COHORTS[0].id)
   const [block, setBlock] = useState<string>(BLOCKS[0].id)
@@ -108,21 +110,21 @@ export default function BuildCurriculumPage() {
       const data = await res.json();
       
       if (res.ok) {
-        alert("✅ " + (data.message || "Lưu thành công!"));
+        alert("✅ " + (data.message || "success!"));
       } else {
-        alert("❌ " + (data.error || "Lưu thất bại!"));
+        alert("❌ " + (data.error || "failed!"));
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("❌ Lỗi khi lưu dữ liệu!");
+      alert("❌ error!");
     } finally {
       setLoading(false)
     }
   }
 
   function handleView() {
-    alert('Open View Curriculum (mock)')
-  }
+  router.push('/view-curriculum')
+}
 
   return (
     <div className="min-h-screen flex items-start justify-center bg-slate-50 p-6">
