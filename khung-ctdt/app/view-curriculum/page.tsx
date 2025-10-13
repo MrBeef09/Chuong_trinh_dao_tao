@@ -242,7 +242,7 @@ export default function ViewCurriculumPage() {
                   cx="50%" 
                   cy="50%" 
                   labelLine={false} 
-                  label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                  label={({ name, value, percent }: any) => `${name}: ${value} ${percent ? `(${(Number(percent) * 100).toFixed(0)})%` : ''}`}
                   outerRadius={80}
                   dataKey="value"
                 >
@@ -282,4 +282,4 @@ export default function ViewCurriculumPage() {
       </div>
     </div>
   </div>
-);
+)};
