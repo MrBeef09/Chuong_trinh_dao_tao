@@ -220,6 +220,7 @@ export default function BuildCurriculumPage() {
                 >
                   {loading ? 'Saving...' : 'Save Changes'}
                 </button>
+                
                 <button onClick={handleView} className="flex-1 border border-slate-300 py-2 rounded-md hover:bg-slate-50 transition">View Curriculum</button>
               </div>
             </div>
