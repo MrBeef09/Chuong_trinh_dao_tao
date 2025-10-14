@@ -5,6 +5,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import toast from "react-hot-toast";
 
 // ---------- Mock data ----------
 type KnowledgeBlock = {
@@ -104,23 +105,24 @@ export default function BuildCurriculumPage() {
       const res = await fetch("/api/khung-ctdt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(FormData),
       });
       
       const data = await res.json();
       
       if (res.ok) {
-        alert("✅ " + (data.message || "success!"));
-      } else {
-        alert("❌ " + (data.error || "failed!"));
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("❌ error!");
-    } finally {
-      setLoading(false)
-    }
+    toast.success(data.message || "✅ Lưu thành công!");
+    } 
+      else {
+    toast.error(data.error || "❌ Lưu thất bại!");
   }
+} catch (error) {
+  console.error("Error:", error);
+  toast.error("❌ Đã xảy ra lỗi!");
+} finally {
+  setLoading(false);
+}
+}
 
   function handleView() {
   router.push('/view-curriculum')
