@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model University {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  address     String?
+  phone       String?
+  email       String?
+  website     String?
+  established DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  schools     School[]
+
+  @@map("universities")
+}
+
+model School {
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  dean         String?
+  phone        String?
+  email        String?
+  address      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  universityId String
+  faculties    Faculty[]
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  @@unique([name, universityId])
+  @@index([universityId], map: "schools_universityId_fkey")
+  @@map("schools")
+}
+
+model Faculty {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  head        String?
+  phone       String?
+  email       String?
+  office      String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  schoolId    String
+  school      School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  majors      Major[]
+  lecturers   Lecturer[]
+
+  @@unique([name, schoolId])
+  @@index([schoolId], map: "faculties_schoolId_fkey")
+  @@map("faculties")
+}
+
+model Major {
+  id              String           @id @default(cuid())
+  name            String
+  code            String           @unique
+  description     String?
+  duration        Int?
+  credits         Int?
+  level           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  facultyId       String
+  faculty         Faculty          @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  subjects        Subject[]
+  courses         Course[]
+  curricula       Curriculum[]
+
+  @@index([facultyId], map: "majors_facultyId_fkey")
+  @@map("majors")
+}
+
+model Lecturer {
+  id          String   @id @default(cuid())
+  title       String?
+  firstName   String
+  lastName    String
+  fullName    String
+  email       String?  @unique
+  phone       String?
+  office      String?
+  biography   String?  @db.Text
+  specialization String?
+  joinDate    DateTime?
+  status      String   @default("Active")
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  facultyId   String
+  faculty     Faculty  @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  subjects    LecturerSubject[]
+
+  @@index([facultyId], map: "lecturers_facultyId_fkey")
+  @@map("lecturers")
+}
+
+model Subject {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  name            String
+  description     String?          @db.Text
+  credits         Int
+  hours           Int?
+  semester        String?
+  imageUrl        String?
+  syllabus        String?          @db.Text
+  prerequisites   String?          @db.Text
+  objectives      String?          @db.Text
+  status          String           @default("Active")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  majorId         String
+  major           Major            @relation(fields: [majorId], references: [id], onDelete: Cascade)
+  lecturers       LecturerSubject[]
+  curricula       CurriculumSubject[]
+
+  @@index([majorId], map: "subjects_majorId_fkey")
+  @@map("subjects")
+}
+
+model Course {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  academicYear    String   // Niên khóa: 2023-2027
+  educationLevel  String   // Hệ đào tạo: Đại học chính quy
+  program         String   // Chương trình đào tạo
+  status          String   @default("Đang đào tạo") // Trạng thái
+  description     String?  @db.Text
+  startDate       DateTime?
+  endDate         DateTime?
+  studentCount    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  majorId         String
+  major           Major    @relation(fields: [majorId], references: [id], onDelete: Cascade)
+
+  @@index([majorId], map: "courses_majorId_fkey")
+  @@map("courses")
+}
+
+model LecturerSubject {
+  id          String   @id @default(cuid())
+  role        String   @default("Instructor") // Instructor, TA, Guest lecturer
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lecturerId  String
+  subjectId   String
+  lecturer    Lecturer @relation(fields: [lecturerId], references: [id], onDelete: Cascade)
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([lecturerId, subjectId])
+  @@index([lecturerId], map: "lecturerSubject_lecturerId_fkey")
+  @@index([subjectId], map: "lecturerSubject_subjectId_fkey")
+  @@map("lecturer_subjects")
+}
+
+model KnowledgeBlock {
+  id          String   @id @default(cuid())
+  name        String   // Tên khối kiến thức (VD: Kiến thức đại cương, Cơ sở ngành, Chuyên ngành)
+  code        String   @unique // Mã khối kiến thức (VD: GD, CS, CN)
+  minCredits  Int      // Số tín chỉ tối thiểu
+  maxCredits  Int      // Số tín chỉ tối đa
+  order       Int      // Thứ tự hiển thị
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  curricula   CurriculumKnowledgeBlock[]
+
+  @@map("knowledge_blocks")
+}
+
+model Curriculum {
+  id              String                       @id @default(cuid())
+  name            String                       // Tên chương trình đào tạo
+  code            String                       // Mã chương trình đào tạo
+  description     String?                      @db.Text
+  version         String                       @default("1.0") // Phiên bản CTĐT
+  academicYear    String                       // Năm học áp dụng (VD: 2024-2025)
+  totalCredits    Int                          // Tổng số tín chỉ
+  duration        Int                          // Thời gian đào tạo (tháng)
+  level           String                       @default("Đại học") // Trình độ: Đại học, Thạc sĩ, Tiến sĩ
+  status          String                       @default("Draft") // Draft, Active, Archived
+  approvedBy      String?                      // Người phê duyệt
+  approvedAt      DateTime?                    // Ngày phê duyệt
+  createdAt       DateTime                     @default(now())
+  updatedAt       DateTime                     @updatedAt
+  majorId         String
+  major           Major                        @relation(fields: [majorId], references: [id], onDelete: Cascade)
+  knowledgeBlocks CurriculumKnowledgeBlock[]
+  subjects        CurriculumSubject[]
+
+  @@unique([code, majorId])
+  @@index([majorId], map: "curricula_majorId_fkey")
+  @@map("curricula")
+}
+
+model CurriculumKnowledgeBlock {
+  id                String         @id @default(cuid())
+  requiredCredits   Int            // Số tín chỉ yêu cầu cho khối kiến thức này trong CTĐT
+  order             Int            // Thứ tự hiển thị trong CTĐT
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  curriculumId      String
+  knowledgeBlockId  String
+  curriculum        Curriculum     @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  knowledgeBlock    KnowledgeBlock @relation(fields: [knowledgeBlockId], references: [id], onDelete: Cascade)
+  subjects          CurriculumSubject[]
+
+  @@unique([curriculumId, knowledgeBlockId])
+  @@index([curriculumId], map: "curriculumKnowledgeBlocks_curriculumId_fkey")
+  @@index([knowledgeBlockId], map: "curriculumKnowledgeBlocks_knowledgeBlockId_fkey")
+  @@map("curriculum_knowledge_blocks")
+}
+
+model CurriculumSubject {
+  id                        String                     @id @default(cuid())
+  type                      String                     // "Required" hoặc "Elective"
+  credits                   Int                        // Số tín chỉ của học phần trong CTĐT này
+  semester                  Int?                       // Học kỳ đề xuất
+  prerequisite              String?                    @db.Text // Điều kiện tiên quyết
+  coRequisite               String?                    @db.Text // Điều kiện đồng thời
+  order                     Int                        // Thứ tự trong khối kiến thức
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  curriculumId              String
+  subjectId                 String
+  curriculumKnowledgeBlockId String?
+  curriculum                Curriculum                 @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  subject                   Subject                    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  curriculumKnowledgeBlock  CurriculumKnowledgeBlock?  @relation(fields: [curriculumKnowledgeBlockId], references: [id], onDelete: SetNull)
+
+  @@unique([curriculumId, subjectId])
+  @@index([curriculumId], map: "curriculumSubjects_curriculumId_fkey")
+  @@index([subjectId], map: "curriculumSubjects_subjectId_fkey")
+  @@index([curriculumKnowledgeBlockId], map: "curriculumSubjects_curriculumKnowledgeBlockId_fkey")
+  @@map("curriculum_subjects")
+}
+
